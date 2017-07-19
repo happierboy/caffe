@@ -21,7 +21,5 @@ void LossLayer<Dtype>::Reshape(
   vector<int> loss_shape(0);  // Loss layers output a scalar; 0 axes.
   top[0]->Reshape(loss_shape);
 }
-
 INSTANTIATE_CLASS(LossLayer);
-
 }  // namespace caffe

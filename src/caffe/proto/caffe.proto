@@ -1131,6 +1131,10 @@ message SoftmaxParameter {
   // from the end (e.g., -1 for the last axis).
   // Any other axes will be evaluated as independent softmaxes.
   optional int32 axis = 2 [default = 1];
+
+  //add by zhangli. pos_mult: The weight for particular class; pos_cid: corresponding class label, where indexes start from 0
+  optional float pos_mult = 3 [default = 1];
+  optional int32 pos_cid = 4 [default = 1];
 }
 
 message TanHParameter {
