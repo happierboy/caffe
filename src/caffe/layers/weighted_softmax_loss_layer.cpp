@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <cfloat>
 #include <vector>
-
+#include <map>
 #include "caffe/layer.hpp"
 #include "caffe/layer_factory.hpp"
 #include "caffe/util/math_functions.hpp"
@@ -22,10 +22,31 @@ void WeightedSoftmaxWithLossLayer<Dtype>::LayerSetUp(
   softmax_top_vec_.clear();
   softmax_top_vec_.push_back(&prob_);
   softmax_layer_->SetUp(softmax_bottom_vec_, softmax_top_vec_);
-  pos_mult_ = this->layer_param_.softmax_param().pos_mult();
-  pos_cid_ = this->layer_param_.softmax_param().pos_cid();
 
-  LOG(INFO) << "mult: " << pos_mult_ << ", id: " << pos_cid_;
+    CHECK_EQ(this->layer_param_.softmax_param().pos_mult_size(),
+             this->layer_param_.softmax_param().pos_cid_size())
+        << "ZHANGLI: number of weights must match number of classes";
+    LOG(INFO) << "multi size: " << this->layer_param_.softmax_param().pos_mult_size() << ", id size: "
+              << this->layer_param_.softmax_param().pos_cid_size();
+
+    int total_num = this->layer_param_.softmax_param().pos_mult_size();
+    for (int i = 0; i < total_num; i++) {
+        pos_mult_.push_back(this->layer_param_.softmax_param().pos_mult(i));
+        pos_cid_.push_back(this->layer_param_.softmax_param().pos_cid(i));
+        weight_map_.insert(pair<int, float>(this->layer_param_.softmax_param().pos_cid(i),
+                                            this->layer_param_.softmax_param().pos_mult(i)));
+    }
+
+    int MAX_CLASS_NUM = 1000;
+    weights_ = new Dtype(MAX_CLASS_NUM);
+    for (int i = 0; i < MAX_CLASS_NUM; i++)
+        weights_[i] = 1;
+    for (map<int, float>::iterator m1_iter = weight_map_.begin(); m1_iter != weight_map_.end(); m1_iter++)
+        weights_[m1_iter->first] = m1_iter->second;
+
+    //pos_mult_ = this->layer_param_.softmax_param().pos_mult();
+    //pos_cid_ = this->layer_param_.softmax_param().pos_cid();
+    //LOG(INFO) << "mult: " << pos_mult_ << ", id: " << pos_cid_;
 
   has_ignore_label_ =
     this->layer_param_.loss_param().has_ignore_label();
@@ -79,10 +100,15 @@ void WeightedSoftmaxWithLossLayer<Dtype>::Forward_cpu(
       }
       DCHECK_GE(label_value, 0);
       DCHECK_LT(label_value, prob_.shape(softmax_axis_));
-      Dtype w = (label_value == pos_cid_) ? pos_mult_ : 1;
+
+
+          //Dtype w = (label_value == pos_cid_) ? pos_mult_ : 1;
+          map<int, float>::iterator iter = weight_map_.find(label_value);
+          Dtype w = (iter != weight_map_.end()) ? iter->second : 1;
       loss -= w * log(std::max(prob_data[i * dim + label_value * inner_num_ + j],
                                Dtype(FLT_MIN)));
-      ++count;
+
+          ++count;
     }
   }
   if (normalize_) {
@@ -121,7 +147,9 @@ void WeightedSoftmaxWithLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*
           }
         } else {
           bottom_diff[i * dim + label_value * inner_num_ + j] -= 1;
-          Dtype w = (label_value == pos_cid_) ? pos_mult_ : 1;
+            map<int, float>::iterator iter = weight_map_.find(label_value);
+            Dtype w = (iter != weight_map_.end()) ? iter->second : 1;
+            //Dtype w = (label_value == pos_cid_) ? pos_mult_ : 1;
           for (int k = 0; k < dim; ++k) {
             bottom_diff[i * dim + k * inner_num_ + j] *= w;
           }

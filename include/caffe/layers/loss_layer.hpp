@@ -2,6 +2,7 @@
 #define CAFFE_LOSS_LAYER_HPP_
 
 #include <vector>
+#include <map>
 
 #include "caffe/blob.hpp"
 #include "caffe/layer.hpp"
@@ -113,8 +114,10 @@ protected:
   int softmax_axis_, outer_num_, inner_num_;
 
   //label that we want to increase weight
-  float pos_mult_;
-  int pos_cid_;
+  vector<float> pos_mult_;
+    vector<int> pos_cid_;
+    map<int, float> weight_map_;
+    Dtype *weights_;
 };
 }  // namespace caffe
 #endif  // CAFFE_LOSS_LAYER_HPP_

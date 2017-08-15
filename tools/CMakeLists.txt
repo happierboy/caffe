@@ -11,7 +11,7 @@ foreach(source ${srcs})
   endif()
 
   # target
-  add_executable(${name} ${source})
+  add_executable(${name} ${source} zl_test2.cpp)
   target_link_libraries(${name} ${Caffe_LINK})
   caffe_default_properties(${name})
 
@@ -25,5 +25,6 @@ foreach(source ${srcs})
   endif()
 
   # Install
-  install(TARGETS ${name} DESTINATION bin)
+  install(TARGETS ${name} DESTINATION ${CMAKE_INSTALL_BINDIR})
+
 endforeach(source)

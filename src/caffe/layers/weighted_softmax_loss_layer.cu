@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <cfloat>
 #include <vector>
-
+#include <map>
 #include "caffe/layer.hpp"
 #include "caffe/util/math_functions.hpp"
 #include "caffe/layers/loss_layer.hpp"
@@ -11,16 +11,21 @@ namespace caffe {
 
 template <typename Dtype>
 __global__ void WeightedSoftmaxLossForwardGPU(const int nthreads,
-          const Dtype* prob_data, const Dtype* label, Dtype* loss,
-	  const Dtype pos_mult_, const int pos_cid_,
-          const int num, const int dim, const int spatial_dim,
-          const bool has_ignore_label_, const int ignore_label_,
-          Dtype* counts) {
+                                              const Dtype *prob_data, const Dtype *label, Dtype *loss,
+                                              const int num, const int dim, const int spatial_dim,
+                                              const bool has_ignore_label_, const int ignore_label_,
+                                              Dtype *weights,
+                                              Dtype *counts) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     const int n = index / spatial_dim;
     const int s = index % spatial_dim;
     const int label_value = static_cast<int>(label[n * spatial_dim + s]);
-    Dtype w = (label_value == pos_cid_) ? pos_mult_ : 1;
+
+    //Dtype w = (label_value == pos_cid_) ? pos_mult_ : 1;
+    //map<int, float>::iterator iter = weight_map_.find(label_value);
+
+    Dtype w = weights[label_value];
+    
     if (has_ignore_label_ && label_value == ignore_label_) {
       loss[index] = 0;
       counts[index] = 0;
@@ -49,10 +54,13 @@ void WeightedSoftmaxWithLossLayer<Dtype>::Forward_gpu(
   // to avoid having to allocate additional GPU memory.
   Dtype* counts = prob_.mutable_gpu_diff();
   // NOLINT_NEXT_LINE(whitespace/operators)
+
   WeightedSoftmaxLossForwardGPU<Dtype><<<CAFFE_GET_BLOCKS(nthreads),
       CAFFE_CUDA_NUM_THREADS>>>(nthreads, prob_data, label, loss_data,
-      pos_mult_, pos_cid_, 
-      outer_num_, dim, inner_num_, has_ignore_label_, ignore_label_, counts);
+              outer_num_, dim, inner_num_, has_ignore_label_, ignore_label_,
+              weights_,
+              counts);
+
   Dtype loss;
   caffe_gpu_asum(nthreads, loss_data, &loss);
   if (normalize_) {
@@ -70,18 +78,20 @@ void WeightedSoftmaxWithLossLayer<Dtype>::Forward_gpu(
 
 template <typename Dtype>
 __global__ void WeightedSoftmaxLossBackwardGPU(const int nthreads, const Dtype* top,
-          const Dtype* label, Dtype* bottom_diff, 
-	  const Dtype pos_mult_, const int pos_cid_,
-	  const int num, const int dim,
-          const int spatial_dim, const bool has_ignore_label_,
-          const int ignore_label_, Dtype* counts) {
+                                               const Dtype *label, Dtype *bottom_diff,
+                                               const int num, const int dim, const int spatial_dim,
+                                               const bool has_ignore_label_, const int ignore_label_,
+                                               Dtype *weights,
+                                               Dtype *counts) {
   const int channels = dim / spatial_dim;
 
   CUDA_KERNEL_LOOP(index, nthreads) {
     const int n = index / spatial_dim;
     const int s = index % spatial_dim;
     const int label_value = static_cast<int>(label[n * spatial_dim + s]);
-    Dtype w = (label_value == pos_cid_) ? pos_mult_ : 1;
+    //Dtype w = (label_value == pos_cid_) ? pos_mult_ : 1;
+
+    Dtype w = weights[label_value];
 
     if (has_ignore_label_ && label_value == ignore_label_) {
       for (int c = 0; c < channels; ++c) {
@@ -118,10 +128,12 @@ void WeightedSoftmaxWithLossLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*
     // we use to to avoid allocating new GPU memory.
     Dtype* counts = prob_.mutable_gpu_diff();
     // NOLINT_NEXT_LINE(whitespace/operators)
-    WeightedSoftmaxLossBackwardGPU<Dtype><<<CAFFE_GET_BLOCKS(nthreads),
+
+    WeightedSoftmaxLossBackwardGPU<Dtype> << < CAFFE_GET_BLOCKS(nthreads),
         CAFFE_CUDA_NUM_THREADS>>>(nthreads, top_data, label, bottom_diff,
-	pos_mult_, pos_cid_,
-        outer_num_, dim, inner_num_, has_ignore_label_, ignore_label_, counts);
+                outer_num_, dim, inner_num_,
+                has_ignore_label_, ignore_label_,
+                weights_, counts);
     const Dtype loss_weight = top[0]->cpu_diff()[0];
     if (normalize_) {
       Dtype count;

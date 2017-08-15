@@ -94,14 +94,15 @@ endif()
 
 # ---[ OpenCV
 if(USE_OPENCV)
-  find_package(OpenCV QUIET COMPONENTS core highgui imgproc imgcodecs)
-  if(NOT OpenCV_FOUND) # if not OpenCV 3.x, then imgcodecs are not found
-    find_package(OpenCV REQUIRED COMPONENTS core highgui imgproc)
-  endif()
-  list(APPEND Caffe_INCLUDE_DIRS PUBLIC ${OpenCV_INCLUDE_DIRS})
-  list(APPEND Caffe_LINKER_LIBS PUBLIC ${OpenCV_LIBS})
-  message(STATUS "OpenCV found (${OpenCV_CONFIG_PATH})")
-  list(APPEND Caffe_DEFINITIONS PUBLIC -DUSE_OPENCV)
+    set(OpenCV_DIR /home/mozat/OpenCV/opencv-3.0.0/release)
+    find_package(OpenCV QUIET COMPONENTS core highgui imgproc imgcodecs)
+    if (NOT OpenCV_FOUND) # if not OpenCV 3.x, then imgcodecs are not found
+        find_package(OpenCV REQUIRED COMPONENTS core highgui imgproc)
+    endif ()
+    list(APPEND Caffe_INCLUDE_DIRS PUBLIC ${OpenCV_INCLUDE_DIRS})
+    list(APPEND Caffe_LINKER_LIBS PUBLIC ${OpenCV_LIBS})
+    message(STATUS "OpenCV found (${OpenCV_CONFIG_PATH})")
+    list(APPEND Caffe_DEFINITIONS PUBLIC -DUSE_OPENCV)
 endif()
 
 # ---[ BLAS

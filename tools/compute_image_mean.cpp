@@ -7,7 +7,7 @@
 #include "boost/scoped_ptr.hpp"
 #include "gflags/gflags.h"
 #include "glog/logging.h"
-
+#include <iostream>
 #include "caffe/proto/caffe.pb.h"
 #include "caffe/util/db.hpp"
 #include "caffe/util/io.hpp"
@@ -28,7 +28,12 @@ int main(int argc, char** argv) {
 #ifndef GFLAGS_GFLAGS_H_
   namespace gflags = google;
 #endif
-
+    std::cout << "first time to debug caffe" << std::endl;
+    int a = 0;
+    if (a == 0) {
+        std::cout << "test caffe code here" << std::endl;
+        return 0;
+    }
   gflags::SetUsageMessage("Compute the mean_image of a set of images given by"
         " a leveldb/lmdb\n"
         "Usage:\n"
