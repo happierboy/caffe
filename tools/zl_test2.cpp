@@ -106,6 +106,19 @@ void Classifier::SetMean(const string &mean_file) {
     merge(channels, mean);
     Scalar channel_mean = cv::mean(mean);
     mean_ = cv::Mat(input_geometry_, mean.type(), channel_mean);
+    cout << mean_.type() << endl;
+
+//    Mat test = cv::Mat::zeros(Size(5,5), CV_32FC3);
+//    cout<<test.cols<<test.rows<<test.channels()<<endl;
+//    for(int i = 0;i<5;i++)
+//        for(int j = 0;j<5;j++){
+//                test.at<Vec3f>(i,j)[0] = 0;
+//                test.at<Vec3f>(i,j)[1] = 1;
+//                test.at<Vec3f>(i,j)[2] = 2;
+//            }
+//    cout<<test<<endl;
+//    cout<<cv::mean(test)<<endl;
+//    cout<<"finish test mean"<<endl;
 }
 
 vector<float> Classifier::Predict(const Mat &img) {
@@ -117,6 +130,10 @@ vector<float> Classifier::Predict(const Mat &img) {
     WrapInputLayer(&input_channels);
 
     Preprocess(img, &input_channels);
+//    std::cout<<"mean shape: "<<mean_.rows<<"\t"<<mean_.cols<<"\t"<<mean_.channels()<<std::endl;
+//    std::cout<<"mean value: "<<mean_<<std::endl;
+//    std::cout<<"mean value: "<<mean_.at<Vec3f>(10,10)[0] << "\t"<<mean_.at<Vec3f>(10,10)[1]<< "\t"<<mean_.at<Vec3f>(10,10)[2] << std::endl;
+//    std::cout<<"mean value: "<<mean_.at<Vec3f>(18,18)[0] << "\t"<<mean_.at<Vec3f>(18,18)[1]<< "\t"<<mean_.at<Vec3f>(18,18)[2] << std::endl;
     net_->Forward();
     /* Copy the output layer to a std::vector */
     Blob<float> *output_layer = net_->output_blobs()[0];

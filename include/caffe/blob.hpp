@@ -56,7 +56,7 @@ class Blob {
     for (int i = 0; i < shape_.size(); ++i) {
       stream << shape_[i] << " ";
     }
-    stream << "(" << count_ << ")";
+    stream << "(size:" << count_ << ")";
     return stream.str();
   }
   inline const vector<int>& shape() const { return shape_; }

@@ -379,14 +379,19 @@ namespace caffe {
             if (Caffe::root_solver()) {
                 LOG(INFO) << layer_param->name() << " -> " << blob_name;
             }
+            //this is to add a new blob in the network.
+            //this holds because the first layer is only data input with top output.
+            //any layer later will be occur in the
             shared_ptr<Blob<Dtype> > blob_pointer(new Blob<Dtype>());
-            const int blob_id = blobs_.size();
-            blobs_.push_back(blob_pointer);
-            blob_names_.push_back(blob_name);
-            blob_need_backward_.push_back(false);
-            if (blob_name_to_idx) { (*blob_name_to_idx)[blob_name] = blob_id; }
-            top_id_vecs_[layer_id].push_back(blob_id);
-            top_vecs_[layer_id].push_back(blob_pointer.get());
+            const int blob_id = blobs_.size();//blobs_, blob_names_, blob_need_backward_ etc are all vectors in order
+            blobs_.push_back(
+                    blob_pointer); //blobs_ keeps all the blob pointers including input and output in each layer
+            blob_names_.push_back(blob_name);//blob_names_ keeps all the blob names
+            blob_need_backward_.push_back(
+                    false);//blob_need_backward_ is the vector to keep whether we need back proprogate the difference
+            if (blob_name_to_idx) { (*blob_name_to_idx)[blob_name] = blob_id; }//blob_name_to_idx keeps the <blob_name, blob_id> pair where blob_id is the in previous vectors
+            top_id_vecs_[layer_id].push_back(blob_id); //top_id_vecs_ keep the blob_id for particular layer_id
+            top_vecs_[layer_id].push_back(blob_pointer.get()); //top_vecs_ keep the blob pointer for particular layer_id
         }
         if (available_blobs) { available_blobs->insert(blob_name); }
     }
@@ -765,8 +770,13 @@ namespace caffe {
                 const bool kReshape = false;
                 target_blobs[j]->FromProto(source_layer.blobs(j), kReshape);
                 LOG(INFO) << "learn this layer param shape" << target_blobs[j]->shape_string();
-                std::cout << "layer name: " << source_layer.name() << " layer param: "
+                std::cout << "layer name: " << source_layer.name() << (j % 2 == 0 ? " weight: " : "bias ")
+                          << " layer param: "
                           << target_blobs[j]->shape_string() << std::endl;
+                std::cout << "blob size: " << target_blobs[j]->mutable_cpu_data()[0] << "\t"
+                          << target_blobs[j]->mutable_cpu_data()[1] << std::endl;
+                std::cout << "blob diff: " << target_blobs[j]->mutable_cpu_diff()[0] << "\t"
+                          << target_blobs[j]->mutable_cpu_diff()[1] << std::endl;
             }
         }
     }
