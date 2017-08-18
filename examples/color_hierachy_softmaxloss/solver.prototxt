@@ -1,0 +1,22 @@
+net: "models/bvlc_googlenet_multask/train_val-color.prototxt"
+test_iter: 1860
+test_interval: 2400
+test_initialization: false
+display: 100
+average_loss: 100
+base_lr: 0.001
+lr_policy: "multistep"
+stepvalue: 5000
+stepvalue: 10000
+stepvalue: 25000
+stepvalue: 50000
+# gamma: 0.1
+#lr_policy: "inv"
+gamma: 0.1
+#power: 0.3
+max_iter: 100000
+momentum: 0.9
+weight_decay: 0.0008
+snapshot: 5000
+snapshot_prefix: "models/bvlc_googlenet_multask/mult_"
+solver_mode: GPU
