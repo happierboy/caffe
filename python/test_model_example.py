@@ -46,6 +46,8 @@ def test():
     caffe.set_mode_gpu()
     caffe.set_device(0)
     net = caffe.Net(new_deploy_file, weight_file, caffe.TEST)
+    #net = caffe.Net(new_deploy_file, caffe.TEST)
+    #net.copy_from(weight_file)
     datum = caffe_pb2.Datum()
     total, main_acc, sub_acc = 0, 0, 0
     index = 0
